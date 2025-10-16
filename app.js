@@ -1,5 +1,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const Book = require("./models/Book");
+const bookRoutes = require("./routes/Book");
 const app = express();
 
 // Coller ici le code de connexion à MongoDB
@@ -21,13 +23,6 @@ app.use((req, res, next) => {
   next();
 });
 
-app.post("/api/books", (req, res, next) => {
-  const book = req.body;
-  res.status(201).json({ message: "Livre ajouté avec succès." });
-});
-
-app.get("/api/books", (req, res, next) => {
-  res.status(200).json({ message: "Livres récupérés avec succès." });
-});
+app.use("/api/books", bookRoutes);
 
 module.exports = app;
