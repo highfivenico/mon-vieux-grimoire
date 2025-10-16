@@ -1,0 +1,22 @@
+{
+  "name": "mon-vieux-grimoire-backend",
+  "version": "1.0.0",
+  "description": "Openclassrooms backend project",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/highfivenico/mon-vieux-grimoire.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/highfivenico/mon-vieux-grimoire/issues"
+  },
+  "homepage": "https://github.com/highfivenico/mon-vieux-grimoire#readme",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
