@@ -1,8 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
-const Book = require("./models/Book");
 const bookRoutes = require("./routes/Book");
 const userRoutes = require("./routes/User");
+const path = require("path");
 const app = express();
 
 // Coller ici le code de connexion à MongoDB
@@ -26,5 +26,6 @@ app.use((req, res, next) => {
 
 app.use("/api/books", bookRoutes);
 app.use("/api/auth", userRoutes);
+app.use("/images", express.static(path.join(__dirname, "images")));
 
 module.exports = app;
