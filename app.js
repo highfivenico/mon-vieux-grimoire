@@ -2,6 +2,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const Book = require("./models/Book");
 const bookRoutes = require("./routes/Book");
+const userRoutes = require("./routes/User");
 const app = express();
 
 // Coller ici le code de connexion à MongoDB
@@ -24,5 +25,6 @@ app.use((req, res, next) => {
 });
 
 app.use("/api/books", bookRoutes);
+app.use("/api/auth", userRoutes);
 
 module.exports = app;
