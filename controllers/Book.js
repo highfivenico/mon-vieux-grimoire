@@ -1,5 +1,6 @@
 const Book = require("../models/Book");
 const fs = require("fs");
+const fsPromises = fs.promises;
 const path = require("path");
 const { processImage } = require("../utils/imageProcessor");
 
@@ -36,7 +37,7 @@ exports.updateBook = async (req, res, next) => {
       return res.status(404).json({ message: "Livre non trouvé." });
     }
     if (book.userId != req.auth.userId) {
-      return res.status(401).json({ message: "Non-autorisé" });
+      return res.status(403).json({ message: "Non-autorisé" });
     }
 
     if (req.file) {
@@ -90,7 +91,10 @@ exports.deleteBook = (req, res, next) => {
   Book.findOne({ _id: req.params.id })
     .then((book) => {
       if (book.userId != req.auth.userId) {
-        res.status(401).json({ message: "Non-autorisé" });
+        res.status(401).json({
+          message:
+            "Non-autorisé" + " - " + req.auth.userId + " - " + book.userId,
+        });
       } else {
         const filename = book.imageUrl.split("/images/")[1];
         fs.unlink(`images/${filename}`, () => {
@@ -107,4 +111,52 @@ exports.deleteBook = (req, res, next) => {
     .catch((error) => {
       res.status(400).json({ error });
     });
+};
+
+exports.rateBook = async (req, res, next) => {
+  try {
+    const bookId = req.params.id;
+    const userId = req.auth.userId;
+    const grade = req.body.rating;
+
+    if (grade < 0 || grade > 5) {
+      return res
+        .status(400)
+        .json({ message: "La note doit être comprise entre 0 et 5." });
+    }
+
+    const book = await Book.findOne({ _id: bookId });
+    if (!book) {
+      return res.status(404).json({ message: "Livre non trouvé." });
+    }
+
+    const alreadyRated = book.ratings.find((r) => r.userId === userId);
+    if (alreadyRated) {
+      return res
+        .status(403)
+        .json({ message: "Vous avez déjà attribué une note à ce livre." });
+    }
+
+    book.ratings.push({ userId, grade });
+
+    const totalGrades = book.ratings.reduce((acc, r) => acc + r.grade, 0);
+    book.averageRating = Math.round(totalGrades / book.ratings.length);
+
+    await book.save();
+
+    res.status(200).json(book);
+  } catch (error) {
+    res.status(500).json({ error });
+  }
+};
+
+exports.getBestRatedBooks = async (req, res, next) => {
+  try {
+    const bestRatedBooks = await Book.find()
+      .sort({ averageRating: -1 })
+      .limit(3);
+    res.status(200).json(bestRatedBooks);
+  } catch (error) {
+    res.status(500).json({ error });
+  }
 };
