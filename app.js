@@ -6,6 +6,13 @@ const path = require("path");
 const app = express();
 
 // Coller ici le code de connexion à MongoDB
+mongoose
+  .connect(
+    "mongodb+srv://<identifiant>:<motdepasse>@cluster0.rw1cwcv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+    { useNewUrlParser: true, useUnifiedTopology: true }
+  )
+  .then(() => console.log("Connexion à MongoDB réussie !"))
+  .catch(() => console.log("Connexion à MongoDB échouée !"));
 
 // Middleware pour parser le JSON des requêtes entrantes
 app.use(express.json());
