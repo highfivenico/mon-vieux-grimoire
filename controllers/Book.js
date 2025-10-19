@@ -10,6 +10,10 @@ exports.createBook = async (req, res, next) => {
     delete bookObject._id;
     delete bookObject._userId;
 
+    if (isNaN(bookObject.year)) {
+      return res.status(400).json({ error: "Année invalide." });
+    }
+
     const uniqueFileName = await processImage(req.file);
 
     const book = new Book({
@@ -30,6 +34,10 @@ exports.updateBook = async (req, res, next) => {
     : { ...req.body };
 
   delete bookObject._userId;
+
+  if (isNaN(bookObject.year)) {
+    return res.status(400).json({ error: "Année invalide." });
+  }
 
   try {
     const book = await Book.findOne({ _id: req.params.id });
@@ -140,7 +148,9 @@ exports.rateBook = async (req, res, next) => {
     book.ratings.push({ userId, grade });
 
     const totalGrades = book.ratings.reduce((acc, r) => acc + r.grade, 0);
-    book.averageRating = Math.round(totalGrades / book.ratings.length);
+    book.averageRating = parseFloat(
+      (totalGrades / book.ratings.length).toFixed(1)
+    );
 
     await book.save();
 
