@@ -4,18 +4,22 @@ const fsPromises = fs.promises;
 const path = require("path");
 const { processImage } = require("../utils/imageProcessor");
 
+// Création d'un livre
 exports.createBook = async (req, res, next) => {
   try {
     const bookObject = JSON.parse(req.body.book);
     delete bookObject._id;
     delete bookObject._userId;
 
+    // Validation d'un champ numérique pour 'year'
     if (isNaN(bookObject.year)) {
       return res.status(400).json({ error: "Année invalide." });
     }
 
+    // Traitement de l'image et obtention du nom de fichier unique
     const uniqueFileName = await processImage(req.file);
 
+    // Création d'un nouvel objet Book avec l'URL de l'image
     const book = new Book({
       ...bookObject,
       userId: req.auth.userId,
@@ -28,6 +32,7 @@ exports.createBook = async (req, res, next) => {
   }
 };
 
+// Modification d'un livre
 exports.updateBook = async (req, res, next) => {
   const bookObject = req.file
     ? { ...JSON.parse(req.body.book) }
@@ -35,11 +40,13 @@ exports.updateBook = async (req, res, next) => {
 
   delete bookObject._userId;
 
+  // Validation d'un champ numérique pour 'year'
   if (isNaN(bookObject.year)) {
     return res.status(400).json({ error: "Année invalide." });
   }
 
   try {
+    // Vérification des droits de l'utilisateur
     const book = await Book.findOne({ _id: req.params.id });
     if (!book) {
       return res.status(404).json({ message: "Livre non trouvé." });
@@ -48,6 +55,7 @@ exports.updateBook = async (req, res, next) => {
       return res.status(403).json({ message: "Non-autorisé" });
     }
 
+    // Si une nouvelle image est fournie, traiter l'image et supprimer l'ancienne
     if (req.file) {
       const uniqueFileName = await processImage(req.file);
 
@@ -60,11 +68,13 @@ exports.updateBook = async (req, res, next) => {
         console.warn("Suppression de l'ancienne image échouée :", error);
       }
 
+      // Mettre à jour l'URL de l'image dans l'objet bookObject
       bookObject.imageUrl = `${req.protocol}://${req.get(
         "host"
       )}/images/${uniqueFileName}`;
     }
 
+    // Mise à jour du livre dans la base de données
     await Book.updateOne(
       { _id: req.params.id },
       { ...bookObject, _id: req.params.id }
@@ -75,6 +85,7 @@ exports.updateBook = async (req, res, next) => {
   }
 };
 
+// Récupération d'un seul livre
 exports.getOneBook = (req, res, next) => {
   Book.findOne({ _id: req.params.id })
     .then((book) => {
@@ -85,6 +96,7 @@ exports.getOneBook = (req, res, next) => {
     });
 };
 
+// Récupération de tous les livres
 exports.getAllBooks = (req, res, next) => {
   Book.find()
     .then((books) => {
@@ -95,7 +107,9 @@ exports.getAllBooks = (req, res, next) => {
     });
 };
 
+// Suppression d'un livre
 exports.deleteBook = (req, res, next) => {
+  // Vérification des droits de l'utilisateur
   Book.findOne({ _id: req.params.id })
     .then((book) => {
       if (book.userId != req.auth.userId) {
@@ -104,6 +118,7 @@ exports.deleteBook = (req, res, next) => {
             "Non-autorisé" + " - " + req.auth.userId + " - " + book.userId,
         });
       } else {
+        // Suppression de l'image associée au livre
         const filename = book.imageUrl.split("/images/")[1];
         fs.unlink(`images/${filename}`, () => {
           Book.deleteOne({ _id: req.params.id })
@@ -121,23 +136,27 @@ exports.deleteBook = (req, res, next) => {
     });
 };
 
+// Noter un livre
 exports.rateBook = async (req, res, next) => {
   try {
     const bookId = req.params.id;
     const userId = req.auth.userId;
     const grade = req.body.rating;
 
+    // Validation de la note
     if (grade < 0 || grade > 5) {
       return res
         .status(400)
         .json({ message: "La note doit être comprise entre 0 et 5." });
     }
 
+    // Récupération du livre
     const book = await Book.findOne({ _id: bookId });
     if (!book) {
       return res.status(404).json({ message: "Livre non trouvé." });
     }
 
+    // Vérification si l'utilisateur a déjà noté le livre
     const alreadyRated = book.ratings.find((r) => r.userId === userId);
     if (alreadyRated) {
       return res
@@ -145,13 +164,16 @@ exports.rateBook = async (req, res, next) => {
         .json({ message: "Vous avez déjà attribué une note à ce livre." });
     }
 
+    // Ajout de la nouvelle note
     book.ratings.push({ userId, grade });
 
+    // Calcul de la nouvelle moyenne des notes
     const totalGrades = book.ratings.reduce((acc, r) => acc + r.grade, 0);
     book.averageRating = parseFloat(
       (totalGrades / book.ratings.length).toFixed(1)
     );
 
+    // Sauvegarde des modifications
     await book.save();
 
     res.status(200).json(book);
@@ -160,6 +182,7 @@ exports.rateBook = async (req, res, next) => {
   }
 };
 
+// Récupérer les 3 livres les mieux notés
 exports.getBestRatedBooks = async (req, res, next) => {
   try {
     const bestRatedBooks = await Book.find()

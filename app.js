@@ -17,7 +17,7 @@ mongoose
 // Middleware pour parser le JSON des requêtes entrantes
 app.use(express.json());
 
-// Middleware pour gérer les CORS
+// Middleware pour gérer les CORS ( Cross-Origin Resource Sharing)
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
@@ -31,6 +31,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Appel des routes
 app.use("/api/books", bookRoutes);
 app.use("/api/auth", userRoutes);
 app.use("/images", express.static(path.join(__dirname, "images")));

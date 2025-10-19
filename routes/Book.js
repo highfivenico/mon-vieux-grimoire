@@ -4,6 +4,7 @@ const bookCtrl = require("../controllers/book");
 const multer = require("../middleware/multer-config");
 const router = express.Router();
 
+// Routes pour les opérations sur les livres
 router.get("/bestrating", bookCtrl.getBestRatedBooks);
 router.get("/", bookCtrl.getAllBooks);
 router.get("/:id", bookCtrl.getOneBook);
